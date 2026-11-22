@@ -1,0 +1,27 @@
+services:
+  stenosaur:
+    build:
+      context: .
+    container_name: stenosaur
+    ports:
+      - "6080:6080"
+      - "5900:5900"
+      - "8000:8000"
+    environment:
+      DISPLAY: :99
+      WEBPAGE_PORT: "8000"
+      NOVNC_PORT: "6080"
+      PULSE_SERVER: "unix:/tmp/pulse/pulse-socket"
+      PULSE_RUNTIME_PATH: "/tmp/pulse"
+      ZOOM_MEETING_ID: "${ZOOM_MEETING_ID:-}"
+      ZOOM_MEETING_PASSWORD: "${ZOOM_MEETING_PASSWORD:-}"
+      ZOOM_DISPLAY_NAME: "${ZOOM_DISPLAY_NAME:-Stenosaur}"
+    volumes:
+      - ./webpage:/app/webpage:ro
+      - ./audio:/audio:ro
+    privileged: false
+    shm_size: "2gb"
+    init: true
+    tty: true
+    stdin_open: true
+    restart: unless-stopped

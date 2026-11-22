@@ -1,0 +1,25 @@
+#!/usr/bin/pulseaudio -nF
+# Use the socket for the browser and ffmpeg to connect.
+load-module module-native-protocol-unix auth-anonymous=1 socket=/tmp/pulse/pulse-socket
+
+# Rate pinned to 48000Hz to match WebRTC's native Opus clock. A mismatched
+# capture rate (e.g. the PulseAudio default of 44100Hz) makes Chrome report
+# different capture-rate/bitrate capabilities across SDP renegotiations,
+# which Zoom's WebRTC stack rejects as a codec collision and disconnects audio.
+
+# Create a virtual microphone sink that can be selected by Chrome / Zoom.
+load-module module-null-sink sink_name=vmic_sink rate=48000 sink_properties=device.description="VirtualMic"
+
+# Separate sink for Zoom's own received audio, so it never loops back into the mic.
+load-module module-null-sink sink_name=zoom_out_sink rate=48000 sink_properties=device.description="ZoomPlaybackOnly"
+
+# Make sure the browser will see vmic_sink as a microphone source.
+# Only mic-bound audio (webpage playback, play-audio.sh) should target vmic_sink;
+# the Zoom browser is launched with PULSE_SINK=zoom_out_sink to keep it off this path.
+set-default-sink vmic_sink
+set-default-source vmic_sink.monitor
+
+# Keep the user-facing audio devices available for debugging.
+# Uncomment if you want a fallback local output device in the container.
+# load-module module-alsa-sink device=default
+# load-module module-alsa-source device=default
